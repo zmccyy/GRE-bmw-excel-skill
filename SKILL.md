@@ -304,12 +304,12 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 
 ## 当前 Excel 状态（动态更新）
 
-- `prefix`: 实际数据行 277-3+1=275 条，编号 1-275（截至初始化）
-- `root`: 实际数据行 172-3+1=170 条，编号 1-170（截至初始化）
-- `suffix`: 实际数据行 28-3+1=26 条，编号 1-26（截至初始化）
-- `mythology&history`: 实际数据行 50-3+1=48 条，编号 1-48（截至初始化）
+- `prefix`: 实际有数据的行 3-88，编号 1-86（含写入测试 2 的 6 条新增）
+- `root`: 实际有数据的行 3-174，编号 1-172（含写入测试 1 的 1 条 + 测试 2 的 1 条）
+- `suffix`: 实际有数据的行 3-28，编号 1-26（截至初始化）
+- `mythology&history`: 实际有数据的行 3-50，编号 1-48（截至初始化）
 
-**注意：每次写入后实际编号会变化；下次追加前必须重新探查 A 列最大编号。**
+**注意：每次写入前必须重新探查 A 列最大编号和实际最后行，max_row 不可信（中间可能有大片空行）。**
 
 ## 写入测试记录
 
@@ -319,3 +319,24 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 - 编号：171
 - 内容：`dic, dict | to say | prediction, indicate, contradict, abdicate, diction, dictum | "We do not inherit the earth from our ancestors. We borrow it from our children." —Indian dictum`
 - 结果：✅ 成功
+
+**测试 2（2026-06-25）— 4 张图批量写入**：
+- **图 1**（root sheet）：
+  - 写入行：第 174 行
+  - 编号：172
+  - 内容：`ben, bon | good, well | benefit, beneficial, benefactor, beneficiary, benediction, benevolence, benign | a new year's benediction; enjoy a benign climate; a benevolent leader; benign tumor`
+  - 结果：✅ 成功
+- **图 2**（prefix sheet，`pre/ante/fore` 用 `/` 分割 → 3 条）：
+  - 行 83 / 编号 81：`pre | before | predict, prepare, preference, precursor, pre-empt, preclude, precocious, predispose, prerequisite | pre-emptive arrest; preclude youths from drugs; precocious child from housework; predispose his children to be successful`
+  - 行 84 / 编号 82：`ante | before | antediluvian, antecedent | diluvian Noah's ark`
+  - 行 85 / 编号 83：`fore | before | forecast, foretell, forestall | forestall an energy crisis`
+  - 结果：✅ 成功
+- **图 3**（prefix sheet）：
+  - 行 86 / 编号 84：`ab, abs | away, from | abdicate, abduct, abscond, abstemious, abstract, abstruse | abdicate=quit; "I wish I knew how to quit you."; abstemious diets`
+  - 结果：✅ 成功
+- **图 4**（prefix sheet，`contra, contro/anti` 混合分割 → 2 条）：
+  - 行 87 / 编号 85：`contra, contro | against | contradictory, controversial, contravene, contraband, contrarian | contravene criminal laws`
+  - 行 88 / 编号 86：`anti | against | antigen, antibiotics, antisocialist, antagonist, antithesis | （留空）`
+  - 结果：✅ 成功
+- **总计**：root +1，prefix +6，共 7 条
+- **踩坑**：max_row 不可信，必须扫描找真实最后行；prefix max_row 报告 277 但实际数据只到行 82
