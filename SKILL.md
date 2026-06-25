@@ -74,31 +74,125 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 - 不进入 Step 2、3、4
 - 如果用户一次性上传多张图，按图片顺序**逐张**确认（不要一次性让用户确认所有图）
 
-### Step 2：识别每条词条
+### Step 2：标准化布局解析（图片布局规则）
 
-从图片中识别每条词条，按以下字段提取：
+**⚠️ 这一步是核心解析逻辑，必须严格按以下布局规则执行。**
 
-| 字段 | 说明 | 示例 |
+用户的 GRE 笔记截图采用**标准化双栏布局**，必须按视觉结构逐区解析：
+
+#### 2.1 整体画布划分
+
+将图片大致**垂直分为左右两大功能区**：
+
+| 区域 | 位置 | 内容 | 字段 |
+|------|------|------|------|
+| **左侧区域** | 左侧 | 红色方框（或红色大括号）框住的部分 | **Mnemotic Device（助记法/语境）** |
+| **右侧区域** | 右侧 | 词根词缀核心数据 | 词根/词缀、含义、举例 |
+
+#### 2.2 左侧区域解析（Mnemotic Device）
+
+- 由**红色方框**或**红色大括号**框出
+- 内含若干条**完整的英文句子或短语搭配**
+- 全部内容提取为 `Mnemotic Device` 字段
+- 保留原文的标点和换行
+
+#### 2.3 右侧区域解析（核心数据）
+
+**严格按照换行和颜色执行**：
+
+**第 1 行（词根/前缀 & 含义）：**
+
+- 寻找**红色或蓝色加粗/高亮**的单词（或紧跟在圆点后的单词或字母组）
+- **规则 A（颜色判定 → 类型）：**
+  - 红色（如 `pre/ante/fore`）→ 归类到 **prefix**（前缀）
+  - 蓝色（如 `ben/bon`）→ 归类到 **root**（词根）
+  - 其它颜色 → 按常见分类判断（-ous/-able/-itive → suffix）
+- **规则 B（含义提取）：**
+  - 在同一行内，紧挨着这个词（通常是逗号或空格后）
+  - 跟着的一串简短英文（如 `good, well` 或 `before`）
+  - 提取为 `Meaning`（含义）
+
+**第 3 行及以下（例词列表）：**
+
+- 在该行下方，所有换行罗列的**单个单词**（如 `benefit, predict` 等）
+- 全部抓取并合并为 `Examples`（例词）列
+- **用 `,` 隔开**（与图片中的换行视觉对齐）
+
+#### 2.4 特殊情况处理
+
+**变体处理：**
+
+- 一行有多个变体（如 `ben, bon` 或 `pre/ante/fore`）：
+  - **用 `,` 分割的** → 放在**同一格**
+  - **用 `/` 分割的** → 每个**单独一格**（每个变体各自生成一条记录）
+- 例子：
+  - 输入 `ben, bon` + 含义 `good, well` → **1 条记录**，`term="ben, bon"`, `meaning="good, well"`
+  - 输入 `pre/ante/fore` + 含义 `before` → **3 条记录**，每条 `term=pre/ante/fore` 中的一个
+
+**左↔右垂直对齐匹配：**
+
+- 左侧的句子与右侧的词组按**视觉垂直对齐**进行匹配
+- 匹配规则：
+  - 左侧第 1 句 → 右侧第 1 组词根（最右栏）
+  - 左侧第 2 句 → 右侧第 2 组词根
+  - ...
+- 如果左侧有 N 句、右侧有 M 组（M ≠ N）：
+  - **优先用原词匹配**：如果左侧句子中包含右侧某个具体变体（如左侧出现 "pre-"，右侧有 "pre/ante/fore"），将这一句绑定到该变体
+  - 多余的句子作为该词根的**通用助记法**附在第一条记录
+  - 缺失的句子位置留空
+- 如果完全无法匹配，**单独列出**让用户确认
+
+#### 2.5 解析示例
+
+**OCR 原始文本（一张典型笔记图）：**
+
+```
+[左侧红色方框]                          [右侧]
+The time before the meeting            pre / ante / fore
+  was tense.                           before
+The soldiers advanced toward
+  the front line.                      predict / pretest / preview
+                                       prevent
+The new law will take effect
+  in the future.                       ancestor / forebear
+                                       forefather
+[ben, bon] 蓝色
+                                       benefit / benediction
+good, well                              bonus / bona fide
+```
+
+**解析后：**
+
+| 类型 | 词根/词缀 | 含义 | Examples | Mnemotic |
+|------|----------|------|----------|----------|
+| prefix | pre | before | predict, pretest, preview | The time before the meeting was tense. |
+| prefix | ante | before | ancestor, forebear | （无匹配） |
+| prefix | fore | before | forefather, preview | The new law will take effect in the future. |
+| root | ben | good, well | benefit, benediction | The soldiers advanced toward the front line. |
+| root | bon | good, well | bonus, bona fide | （共享 ben 的助记或留空） |
+
+（注：上方 `pre/ante/fore` 因用 `/` 分割所以拆成 3 条；`ben, bon` 因用 `,` 分割所以合并成 1 条）
+
+#### 2.6 字段填写规则
+
+| 字段 | 来源 | 示例 |
 |------|------|------|
-| **类型** | prefix / root / suffix / 神话历史 | `prefix` |
-| **词缀/词根/词源** | 主体内容 | `ab-, abs-` |
-| **含义** | 释义（英文为主，与原笔记一致） | `away from, off` |
-| **举例 (Examples)** | 派生词 | `dangerous/arduous` |
-| **助记/典故 (Mnemotic Device)** | **图片中有的助记法/典故也要写入** | （有就写，没有就留空） |
+| **类型** | 颜色判定（红=prefix, 蓝=root） | `prefix` |
+| **词根/词缀** | 第 1 行高亮词组 | `pre` 或 `ben, bon` |
+| **含义** | 第 1 行高亮词后的英文 | `before` 或 `good, well` |
+| **Examples** | 第 3 行及以下的换行列出的单词 | `predict, pretest, preview` |
+| **Mnemotic Device** | 左侧红色方框中的句子 | `The time before the meeting was tense.` |
 
 **Examples 字段格式说明：**
 
-- 不强制使用 `/` 或 `,` 分隔，**保持图片中原始分隔方式**
-- 如果原图用的是 `/`，就用 `/`
-- 如果原图用的是 `,`，就用 `,`
-- 如果原图是换行，就用 `/` 合并
-- 最终目的：与图片中的视觉风格保持一致
+- 右侧第 3 行及以下的每个单词用 `,` 分隔（**不区分**图片中原本是 `/` 还是 `,` 还是换行）
+- 目的：与图片中"每个单词一行"的视觉风格保持一致
 
 **Mnemotic Device 字段说明：**
 
-- **必须主动检查图片中是否包含助记法或典故**
-- 如果图片里有"谐音"、"形象记忆"、"希腊神话 XXX"、"罗马 XXX"等字样，必须提取并写入
-- 图片中无相关内容则留空（不要瞎编）
+- **必须主动检查**图片左侧是否有红色方框/大括号
+- 左侧句子直接整段提取（保留标点、保留换行或用空格连接均可）
+- 如果左侧无红色方框/大括号 → 留空（**不要瞎编**）
 
 ### Step 3：判断写入哪个 Sheet（按用户提供的图片顺序逐个 sheet 追加）
 
