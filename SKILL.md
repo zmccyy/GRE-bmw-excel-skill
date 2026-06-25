@@ -74,6 +74,7 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 - 不进入 Step 2、3、4
 - 如果用户一次性上传多张图，按图片顺序**逐张**确认（不要一次性让用户确认所有图）
 
+
 ### Step 2：标准化布局解析（图片布局规则）
 
 **⚠️ 这一步是核心解析逻辑，必须严格按以下布局规则执行。**
@@ -363,8 +364,8 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 
 ## 当前 Excel 状态（动态更新）
 
-- `prefix`: 实际有数据的行 3-88，编号 1-86（含写入测试 2 的 6 条新增）
-- `root`: 实际有数据的行 3-174，编号 1-172（含写入测试 1 的 1 条 + 测试 2 的 1 条）
+- `prefix`: 实际有数据的行 3-93，编号 1-91（含写入测试 3 的 5 条新增）
+- `root`: 实际有数据的行 3-176，编号 1-174（含写入测试 3 的 2 条新增）
 - `suffix`: 实际有数据的行 3-28，编号 1-26（截至初始化）
 - `mythology&history`: 实际有数据的行 3-50，编号 1-48（截至初始化）
 
@@ -399,3 +400,17 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
   - 结果：✅ 成功
 - **总计**：root +1，prefix +6，共 7 条
 - **踩坑**：max_row 不可信，必须扫描找真实最后行；prefix max_row 报告 277 但实际数据只到行 82
+
+**测试 3（2026-06-25）— 2 张多组图写入**：
+- **图 1**（root sheet，2 组）：
+  - 行 175 / 编号 173：`vol, val | wish | volunteer, malevolence, ambivalent | （留空）`（助记留空，因为左侧 4 句都跟 mal 相关）
+  - 行 176 / 编号 174：`mal | bad | malevolent, malediction, malign v/a. =malicious, malnourished, malevolence | malign his ex-wife for cheating on him; counter malign influences; malice of his ex-wife; malicious attacks`
+  - 结果：✅ 成功
+- **图 2**（prefix sheet，`ambi/amphi/bi/di/dup` 用 `/` 分割 → 5 条）：
+  - 行 89 / 编号 87：`ambi | two, both | ambivalence, ambiguous, ambidextrous | （留空）`
+  - 行 90 / 编号 88：`amphi | two, both | （留空，图中无独立例词） | （留空）`
+  - 行 91 / 编号 89：`bi | two, both | bilingual | （留空）`
+  - 行 92 / 编号 90：`di | two, both | dilemma, divergence, dichotomy | verge; convergence`（verge / convergence 归到 di 组）
+  - 行 93 / 编号 91：`dup | two, both | duplex, duplicity, duplicate | （留空）`
+  - 结果：✅ 成功
+- **总计**：root +2，prefix +5，共 7 条
