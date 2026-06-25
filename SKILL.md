@@ -102,25 +102,28 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 
 **第 1 行（词根/前缀 & 含义）：**
 
-- 寻找**红色或蓝色加粗/高亮**的单词（或紧跟在圆点后的单词或字母组）
-- **规则 A（颜色判定 → 类型）：**
-  - 红色（如 `pre/ante/fore`）→ 归类到 **prefix**（前缀）
-  - 蓝色（如 `ben/bon`）→ 归类到 **root**（词根）
+- 寻找带 **红点（■/●/•）标记** 的行（即 `■` `●` `•` 这类小圆点符号开头的那一行）
+- 红点行的内容是**核心词根或前缀**，**不是**例词
+- 同一行内可能既有前缀也有词根（如 `pre` + `diction`），它们之间用空格或连字符分隔
+- **类型判断规则（按颜色，与红点无关）：**
+  - **红色**词 → 归类到 **prefix**（前缀）
+  - **蓝色**词 → 归类到 **root**（词根）
   - 其它颜色 → 按常见分类判断（-ous/-able/-itive → suffix）
-- **规则 B（含义提取）：**
-  - 在同一行内，紧挨着这个词（通常是逗号或空格后）
-  - 跟着的一串简短英文（如 `good, well` 或 `before`）
+- **含义提取：**
+  - 在同一行内，紧挨着核心词（通常是逗号或空格后）
+  - 跟着的一串简短英文（如 `to say` 或 `before`）
   - 提取为 `Meaning`（含义）
 
-**第 3 行及以下（例词列表）：**
+**红点行下方（例词列表）：**
 
-- 在该行下方，所有换行罗列的**单个单词**（如 `benefit, predict` 等）
+- 在红点行下方，**所有换行罗列的单词**（如 `prediction`、`indicate`、`contradict` 等）
+- **全部都是例词**（不区分颜色，红色蓝色黑色一律视为例词）
 - 全部抓取并合并为 `Examples`（例词）列
 - **用 `,` 隔开**（与图片中的换行视觉对齐）
 
 #### 2.4 特殊情况处理
 
-**变体处理：**
+**变体处理（仅指同一类型的多个写法，如 `ben, bon` 或 `pre/ante/fore`）：**
 
 - 一行有多个变体（如 `ben, bon` 或 `pre/ante/fore`）：
   - **用 `,` 分割的** → 放在**同一格**
@@ -128,6 +131,13 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 - 例子：
   - 输入 `ben, bon` + 含义 `good, well` → **1 条记录**，`term="ben, bon"`, `meaning="good, well"`
   - 输入 `pre/ante/fore` + 含义 `before` → **3 条记录**，每条 `term=pre/ante/fore` 中的一个
+
+**红点行内的"前缀+词根"组合（如 `pre` + `diction`）：**
+
+- **不拆分成多条记录**
+- 把整行视为**一个完整的构词单元**
+- 写入时只写 **1 条**记录，词缀列写**整个组合**（如 `pre-diction` 或 `pre diction`，与图片保持一致）
+- 类型归属按**主词根**的颜色判断（`diction` 蓝色 → 归 `root`）
 
 **左↔右垂直对齐匹配：**
 
@@ -144,34 +154,34 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 
 #### 2.5 解析示例
 
-**OCR 原始文本（一张典型笔记图）：**
+**OCR 原始文本（一张典型笔记图，含红点行）：**
 
 ```
 [左侧红色方框]                          [右侧]
-The time before the meeting            pre / ante / fore
-  was tense.                           before
+                                        ■ dic, dict    to say       <- 红点行，蓝色=root
+The time before the meeting
+  was tense.                            prediction
+                                        indicate
 The soldiers advanced toward
-  the front line.                      predict / pretest / preview
-                                       prevent
-The new law will take effect
-  in the future.                       ancestor / forebear
-                                       forefather
-[ben, bon] 蓝色
-                                       benefit / benediction
-good, well                              bonus / bona fide
+  the front line.                       contradict
+                                        abdicate
+                                        diction
+                                        dictum
 ```
 
-**解析后：**
+**关键识别点：**
+- `■ dic, dict` 这行有红点 `■`，是**核心词根行**（不是例词）
+- `dic, dict` 是**蓝色**，按规则归类为 **root**
+- `to say` 在同一行内 → **含义**
+- 下方 6 个词（`prediction`/`indicate`/`contradict`/`abdicate`/`diction`/`dictum`）→ 全部是**例词**，不区分颜色
+
+**解析后（写入 root sheet 的 1 条记录）：**
 
 | 类型 | 词根/词缀 | 含义 | Examples | Mnemotic |
 |------|----------|------|----------|----------|
-| prefix | pre | before | predict, pretest, preview | The time before the meeting was tense. |
-| prefix | ante | before | ancestor, forebear | （无匹配） |
-| prefix | fore | before | forefather, preview | The new law will take effect in the future. |
-| root | ben | good, well | benefit, benediction | The soldiers advanced toward the front line. |
-| root | bon | good, well | bonus, bona fide | （共享 ben 的助记或留空） |
+| root | `dic, dict` | to say | prediction, indicate, contradict, abdicate, diction, dictum | The time before the meeting was tense. The soldiers advanced toward the front line. |
 
-（注：上方 `pre/ante/fore` 因用 `/` 分割所以拆成 3 条；`ben, bon` 因用 `,` 分割所以合并成 1 条）
+（注：`dic, dict` 用 `,` 分割 → 1 条记录；下方所有例词不区分颜色一律合并到 Examples）
 
 #### 2.6 字段填写规则
 
