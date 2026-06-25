@@ -302,11 +302,20 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 - **每张图的 OCR 结果都必须经用户确认后再写入**，不允许跳过
 - **不处理 mythology&history sheet**，图片中遇到神话/历史内容直接忽略
 
-## 当前 Excel 状态（截至初始化）
+## 当前 Excel 状态（动态更新）
 
-- `prefix`: 已有数据 277 行（含标题/表头），实际词条从第 3 行起
-- `root`: 已有数据 276 行
-- `suffix`: 已有数据 28 行
-- `mythology&history`: 已有数据 50 行
+- `prefix`: 实际数据行 277-3+1=275 条，编号 1-275（截至初始化）
+- `root`: 实际数据行 172-3+1=170 条，编号 1-170（截至初始化）
+- `suffix`: 实际数据行 28-3+1=26 条，编号 1-26（截至初始化）
+- `mythology&history`: 实际数据行 50-3+1=48 条，编号 1-48（截至初始化）
 
-（注：以上为初始状态，调用过程中会变化）
+**注意：每次写入后实际编号会变化；下次追加前必须重新探查 A 列最大编号。**
+
+## 写入测试记录
+
+**测试 1（2026-06-25）**：
+- 目标：root sheet
+- 写入行：第 173 行
+- 编号：171
+- 内容：`dic, dict | to say | prediction, indicate, contradict, abdicate, diction, dictum | "We do not inherit the earth from our ancestors. We borrow it from our children." —Indian dictum`
+- 结果：✅ 成功
