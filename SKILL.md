@@ -42,7 +42,7 @@ description: "Extract word roots, prefixes, suffixes, and mythology/history allu
 | `prefix` | `cctalk GRE BMW词根缀课程-配套笔记模板` | `Prefix` / `Meaning` / `Examples` / `Mnemotic Device` | A 编号 / B Prefix / C Meaning / D Examples / E Mnemotic |
 | `root` | `cctalk GRE BMW词根缀课程-配套笔记模板` | `Root` / `Meaning` / `Examples` / `Mnemotic Device` | A 编号 / B Root / C Meaning / D Examples / E Mnemotic |
 | `suffix` | `cctalk GRE BMW词根缀课程-配套笔记模板` | `Suffix` / `Meaning` / `Examples` / `Mnemotic Device` | A 编号 / B Suffix / C Meaning / D Examples / E Mnemotic |
-| `mythology&history` | `神话与历史词源` | `词源` / `典故` / `重点词汇` | A 编号 / B 词源 / C 典故 / D 重点词汇 |
+| `mythology&history` | `神话与历史词源`（A1:D1 合并）| `编号` / `词源` / `典故` / `重点词汇` | A 编号 / B 词源 / C 典故 / D 重点词汇 |
 
 **重要规则：**
 - 不要新增 sheet、不要改表头、不要改标题行
@@ -331,29 +331,24 @@ The soldiers advanced toward
 
 ##### 2.7.3 表格填充目标
 
-写入 **`mythology&history` sheet**，列对应关系：
+写入 **`mythology&history` sheet`，4 列严格对应**：
 
 | mythology&history 列 | Excel 实际位置 | 内容来源 | 用户指定字段名 |
 |---------------------|---------------|----------|----------------|
-| A 编号 | A 列 | 自动递增 | — |
-| B 词源 | A 列（同列复用）| 第 1 列（红色方框后黑体词，如 `Olympus`） | **词源/名称** |
+| A 编号 | A 列 | 自动递增（1, 2, 3...） | **编号** |
+| B 词源 | B 列 | 第 1 列（红色方框后黑体词，如 `Bacchus`） | **词源/名称** |
 | C 典故 | C 列 | 第 2 列（黑体词下方完整英文句子） | **背景故事/语境** |
 | D 重点词汇 | D 列 | 第 3 列（紫色字体衍生词） | **派生词汇** |
 
-**注意**：经过实际读取 `cctalk GRE BMW.xlsx` 的 `mythology&history` sheet 后确认：
-- 第 1 行标题：`神话与历史词源`
-- 第 2 行表头：**A 列空**，**C 列 = 典故**，**D 列 = 重点词汇**（没有 B 列）
-- 实际数据从第 3 行开始，A 列填编号
+**实测表头**（写入前自动验证）：
+- 第 1 行：`神话与历史词源`（A1:D1 合并单元格）
+- 第 2 行：A=`编号`, B=`词源`, C=`典故`, D=`重点词汇`
 
-**最终填充方式**（按用户最新要求 "对齐填充位置"）：
+**填充示例**：
 
-| A 列 | C 列 | D 列 |
-|------|------|------|
-| 编号 + 词源/名称（如 `49 Olympus`） | 背景故事/语境 | 派生词汇 |
-
-> **说明**：因为 A 列既要存编号又要存"词源/名称"，采用 **`编号 + 空格 + 词源`** 的格式（如 `49 Olympus`），保持与现有数据风格一致（现有数据 A 列只有编号，无词源）。
-> 
-> **如果用户后续希望分开放置**（A=编号, B=词源, C=典故, D=重点词汇），需要调整 sheet 的列结构并重新读取，本技能当前按上述"复用 A 列"的方式执行。
+| A 列（编号） | B 列（词源） | C 列（典故） | D 列（重点词汇） |
+|--------------|--------------|--------------|------------------|
+| `48` | `Bacchus` | `Roman god of drama, wine, and ecstasy` | `Bacchanalian a. 饮酒作乐的` |
 
 ##### 2.7.4 解析示例
 
@@ -375,9 +370,9 @@ The Greek Gods lived high atop           （右侧无红点行）
 
 **解析后（写入 mythology&history sheet 的 1 条记录）**：
 
-| 编号 (A) | 词源/名称 (A 复用) | 典故 (C) | 重点词汇 (D) |
-|----------|-------------------|----------|--------------|
-| `49 Olympus` | （已合并到 A） | `The Greek Gods lived high atop Mount Olympus.` | `olympian a. 高傲的，疏离的` |
+| 编号 (A) | 词源 (B) | 典故 (C) | 重点词汇 (D) |
+|----------|----------|----------|--------------|
+| `49` | `Olympus` | `The Greek Gods lived high atop Mount Olympus.` | `olympian a. 高傲的，疏离的` |
 
 ##### 2.7.5 与词根/前缀模式的区别
 
@@ -423,9 +418,9 @@ Bacchanalian a. 饮酒作乐的
 
 **解析后（写入 mythology&history sheet 的 1 条记录）**：
 
-| 编号 (A) | 典故 (C) | 重点词汇 (D) |
-|----------|----------|--------------|
-| `49 Bacchus` | `Roman god of drama, wine, and ecstasy` | `Bacchanalian a. 饮酒作乐的` |
+| 编号 (A) | 词源 (B) | 典故 (C) | 重点词汇 (D) |
+|----------|----------|----------|--------------|
+| `48` | `Bacchus` | `Roman god of drama, wine, and ecstasy` | `Bacchanalian a. 饮酒作乐的` |
 
 ##### 2.7.8 神话典故模式的"实操判定捷径"
 
@@ -442,20 +437,39 @@ Bacchanalian a. 饮酒作乐的
 
 **如果只有 1-2 捷径通过** → 单独询问用户确认模式。
 
-##### 2.7.9 修正案例 1：用户最新要求"对齐填充位置"
+##### 2.7.9 列结构修正记录（2026-06-26）
 
-**之前的填充方式**：A 列只放编号，B/C/D 分别放词源/典故/派生词汇
-**用户最新要求**：A 列放"编号 + 词源/名称"，C/D 列放典故/派生词汇
+**之前的填充方式（错误）**：A 列放"编号 + 词源"的合并字符串（如 `48 Bacchus`）
+**用户最新要求（正确）**：A=编号, B=词源, C=典故, D=重点词汇（4 列严格分开）
 
-**调整后的填充方式**（已采用）：
+**已执行的修复**：
+1. **Excel 表头修正**：
+   - A2：`词源` → `编号`
+   - B2：新增 `词源`
+   - C2/D2：保持 `典故` / `重点词汇`
+   - A1:D1 标题行重新合并 + 补"神话与历史词源"
+2. **Bacchus 第 50 行重写**：
+   - A=48, B=Bacchus, C=Roman god of drama, wine, and ecstasy, D=Bacchanalian a. 饮酒作乐的
 
-| A 列 | C 列 | D 列 |
-|------|------|------|
-| `编号 + 空格 + 词源`（如 `49 Bacchus`） | 典故/背景故事 | 派生词汇 |
+**新结构确认**（写入前自动验证）：
 
-**为什么 A 列要复用**：因为现有 sheet 的结构里 B 列没有内容（表头第 2 行 A=空，C=典故，D=重点词汇）。把"词源/名称"合并到 A 列可以保持 sheet 结构的最小修改。
+| A 列 | B 列 | C 列 | D 列 |
+|------|------|------|------|
+| 编号（int）| 词源（str）| 典故（str）| 重点词汇（str） |
 
-**如果用户后续希望"扩展 B 列"**：需要把现有 48 条数据全部迁移，并修改表头。当前**不推荐**做这种破坏性修改。
+**示例代码**（写入 mythology 模式）：
+
+```python
+ws = wb['mythology&history']
+new_row = last_data_row + 1
+new_num = last_num + 1
+ws.cell(row=new_row, column=1, value=new_num)  # A 列：编号
+ws.cell(row=new_row, column=2, value=item['source'])  # B 列：词源
+ws.cell(row=new_row, column=3, value=item['story'])  # C 列：典故
+ws.cell(row=new_row, column=4, value=item['derived'])  # D 列：重点词汇
+```
+
+**保留向后兼容**：如果未来再次发现 mythology&history sheet 的表头不是 4 列结构（如 A 列又要复用），技能会**报错提示用户确认**，不会盲目写入。
 
 ### Step 3：判断写入哪个 Sheet（按用户提供的图片顺序逐个 sheet 追加）
 
@@ -564,10 +578,10 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 
 **注意：每次写入前必须重新探查 A 列最大编号和实际最后行，max_row 不可信（中间可能有大片空行）。**
 
-**mythology&history sheet 表头结构（已读取确认）**：
-- 第 1 行（标题）：`神话与历史词源`
-- 第 2 行（表头）：A=空, C=`典故`, D=`重点词汇`
-- 数据列位置：**A 列**（编号+词源复用）, **C 列**（典故）, **D 列**（重点词汇）
+**mythology&history sheet 表头结构（已读取确认，2026-06-26 修正）**：
+- 第 1 行（标题）：`神话与历史词源`（A1:D1 合并）
+- 第 2 行（表头）：A=`编号`, B=`词源`, C=`典故`, D=`重点词汇`
+- 数据列位置：**A 列**（int 编号）, **B 列**（词源）, **C 列**（典故）, **D 列**（重点词汇）
 
 ## 写入测试记录
 
@@ -616,14 +630,16 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 **测试 4（2026-06-26）— 神话典故模式（Bacchus）**：
 - **图**（mythology&history sheet，模式 B 触发）：
   - **判定依据**：右侧无红点行 + 左侧有黑体大写专有名词 `Bacchus` + 下方有完整英文句子 + 段落末尾有紫色字体衍生词
-  - **行 50 / 编号 48**：
-    - A 列：`48 Bacchus`
+  - **行 50**：
+    - A 列（编号）：`48`
+    - B 列（词源）：`Bacchus`
     - C 列（典故）：`Roman god of drama, wine, and ecstasy`
     - D 列（重点词汇）：`Bacchanalian a. 饮酒作乐的`
 - **注意**：
   - 右侧的中文背景介绍（"酒神是古希腊及古罗马..."）**忽略**，不是结构化数据
-  - A 列采用"编号 + 空格 + 词源"的格式（与现有 sheet 结构兼容）
+  - 4 列严格分开（A=编号, B=词源, C=典故, D=重点词汇）
 - **结果**：✅ 成功（首次使用神话典故模式）
+- **2026-06-26 修正**：表头从"A 复用"改为"4 列分开"，Bacchus 行已重写
 
 **测试 5（2026-06-26）— 4 张多组图批量写入（9 条：8 root + 1 prefix）**：
 - **图 1**（root sheet，`ced, cess/grad, gress/vad, vas` 混合分割 → 3 条）：
@@ -641,3 +657,14 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
   - 行 184 / 编号 182：`scop | to look, see | telescope, microscope, endoscope | （留空）`
 - **总计**：root +8，prefix +1，共 9 条
 - **踩坑**：第一次写入失败 `PermissionError`，原因是 Excel 仍占用文件。**必须先关闭 Excel 再写入**。
+
+**测试 6（2026-06-26）— 列结构修正**：
+- **问题**：mythology&history sheet 原表头为 A=词源（实际只放编号），B 列无表头，C=典故，D=重点词汇。A 列是合并的"编号+词源"格式（如 `48 Bacchus`）
+- **用户要求**：4 列严格分开：A=编号, B=词源, C=典故, D=重点词汇
+- **修复步骤**：
+  1. 解除 A1:D1 标题行合并 → 重新合并 + 补"神话与历史词源"
+  2. 解除 A2:B2 表头合并 → A2=`编号`, B2=`词源`
+  3. C2/D2 保持 `典故`/`重点词汇`
+  4. Bacchus 第 50 行重写：A=48, B=Bacchus, C=典故, D=重点词汇
+- **结果**：✅ 成功
+- **后续规则**：mythology&history sheet 写入前必须**自动验证表头**，确保是 4 列结构
