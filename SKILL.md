@@ -560,7 +560,7 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 - `prefix`: 实际有数据的行 3-93，编号 1-91（含写入测试 3 的 5 条新增）
 - `root`: 实际有数据的行 3-176，编号 1-174（含写入测试 3 的 2 条新增）
 - `suffix`: 实际有数据的行 3-28，编号 1-26（截至初始化）
-- `mythology&history`: 实际数据行 3-49，编号 1-47（max_row=50 但行 50 是空）
+- `mythology&history`: 实际数据行 3-50，编号 1-48（含写入测试 4 的 1 条新增）
 
 **注意：每次写入前必须重新探查 A 列最大编号和实际最后行，max_row 不可信（中间可能有大片空行）。**
 
@@ -616,8 +616,8 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 **测试 4（2026-06-26）— 神话典故模式（Bacchus）**：
 - **图**（mythology&history sheet，模式 B 触发）：
   - **判定依据**：右侧无红点行 + 左侧有黑体大写专有名词 `Bacchus` + 下方有完整英文句子 + 段落末尾有紫色字体衍生词
-  - **行 51 / 编号 49**：
-    - A 列：`49 Bacchus`
+  - **行 50 / 编号 48**：
+    - A 列：`48 Bacchus`
     - C 列（典故）：`Roman god of drama, wine, and ecstasy`
     - D 列（重点词汇）：`Bacchanalian a. 饮酒作乐的`
 - **注意**：
