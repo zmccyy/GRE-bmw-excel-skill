@@ -1,15 +1,17 @@
 ---
 name: "GRE-bmw"
-description: "Extract word roots, prefixes, and suffixes from user-uploaded handwritten GRE note screenshots, confirm OCR text with the user per image, and append them to the existing cctalk GRE BMW.xlsx notebook (prefix/root/suffix sheets only). Invoke when user uploads a handwritten vocabulary screenshot and asks to 整理词根前缀后缀/写入Excel/整理到笔记/补全笔记."
+description: "Extract word roots, prefixes, suffixes, and mythology/history allusions from user-uploaded handwritten GRE note screenshots, confirm OCR text with the user per image, and append them to the existing cctalk GRE BMW.xlsx notebook. Use TWO modes: (A) root/prefix/suffix mode writes to prefix/root/suffix sheets when right side has red-dot rows; (B) mythology mode writes to mythology&history sheet when right side has NO red-dot row and there's a black bold proper noun (e.g. Olympus, Bacchus) followed by an English story sentence. Invoke when user uploads a handwritten vocabulary screenshot and asks to 整理词根前缀后缀/写入Excel/整理到笔记/补全笔记/添加神话典故/神话与历史."
 ---
 
 # GRE-bmw 技能
 
 ## 技能目的
 
-从用户上传的 **手写 GRE 笔记截图** 中识别**词根、前缀、后缀**等构词要素，并按用户的现有笔记格式，**追加/补全** 到现有的 `cctalk GRE BMW.xlsx` 笔记文件中，节省抄写时间。
+从用户上传的 **手写 GRE 笔记截图** 中识别**词根、前缀、后缀**等构词要素，以及**神话/历史典故**（Olympus / Bacchus 等），按用户的现有笔记格式，**追加/补全** 到现有的 `cctalk GRE BMW.xlsx` 笔记文件中，节省抄写时间。
 
-**注意：本技能只处理 prefix / root / suffix 三类构词要素，不处理 mythology&history（神话历史）内容。**
+**技能支持两种模式**：
+1. **词根/前缀模式**（默认）：处理 prefix / root / suffix 三类构词要素
+2. **神话典故模式**（特殊）：处理 mythology&history 类的词源典故（详细规则见 Step 2.7）
 
 ## 触发场景
 
@@ -17,13 +19,15 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 
 - 上传一张或一组 **手写 GRE 笔记截图**，并要求"整理到 Excel"、"写入笔记"
 - 提到"提取词根"、"补全笔记"、"追加到现有的 Excel"
-- 类似的关键词：**词根 / 前缀 / 后缀 / 词缀 / 整理 / 补全 / 笔记 / cctalk / BMW**
+- 上传**神话典故类截图**（如 Olympus / Bacchus / Achilles 等），要求"写入神话"、"添加神话"
+- 类似的关键词：**词根 / 前缀 / 后缀 / 词缀 / 整理 / 补全 / 笔记 / cctalk / BMW / 神话 / 典故 / 词源 / Olympus / Bacchus / Achilles / Pandora**
 - 用户表达"接着上一个笔记写"、"继续填这个表"等需求
 
 **典型用户表述：**
 - "把这张手写笔记的词根整理到 cctalk GRE BMW.xlsx 里"
 - "接着把 prefix 写完"
 - "补全 root 那张表"
+- "把 Bacchus 这个神话典故加到 mythology&history sheet"
 
 ## 目标文件
 
@@ -89,6 +93,23 @@ description: "Extract word roots, prefixes, and suffixes from user-uploaded hand
 |------|------|------|------|
 | **左侧区域** | 左侧 | 红色方框（或红色大括号）框住的部分 | **Mnemotic Device（助记法/语境）** |
 | **右侧区域** | 右侧 | 词根词缀核心数据 | 词根/词缀、含义、举例 |
+
+#### 2.1.1 图片模式判定（必须先做！）
+
+**重要**：在解析前必须先判断这张图属于哪种模式，**不同模式走不同解析路径**。
+
+| 模式 | 触发条件 | 目标 sheet |
+|------|----------|-----------|
+| **A. 词根/前缀模式** | 右侧有 **红点行（■/●/•）** + 蓝/红色高亮词根 | `prefix` / `root` / `suffix` |
+| **B. 神话典故模式** | 右侧**无红点行** + 左侧出现**单个黑体大写专有名词**（如 Olympus）+ 下方紧跟完整英文故事句 | `mythology&history` |
+
+**判定优先级**：B 优先于 A（即优先检查是否符合神话典故模式）
+
+**判定流程**：
+1. 扫描右侧区域，**确认是否有红点行**（`■` `●` `•` 开头）
+2. 如果**没有红点行** → 进一步检查左侧是否出现"黑体大写专有名词 + 完整故事句"模式
+3. 如果符合 → 启用 **2.7 神话典故模式**解析
+4. 如果不符合 → 退回 **2.3 词根/前缀模式**解析
 
 #### 2.2 左侧区域解析（Mnemotic Device）
 
@@ -264,6 +285,178 @@ The soldiers advanced toward
 - 左侧句子直接整段提取（保留标点、保留换行或用空格连接均可）
 - 如果左侧无红色方框/大括号 → 留空（**不要瞎编**）
 
+#### 2.7 神话典故模式（Mythology Mode）
+
+**适用范围**：经过 2.1.1 模式判定，符合"神话典故模式"的图片。
+
+**重要更新**：本技能**现在也处理 mythology&history sheet**（与之前"不处理"的规则不同）。当图片被判定为神话典故模式时，**写入 `mythology&history` sheet**。
+
+##### 2.7.1 触发条件（同时满足）
+
+1. 图片右侧**没有红点行**（`■` `●` `•` 开头）
+2. 图片中出现**单个黑体大写专有名词**（如 `Olympus`、`Achilles`、`Pandora`），通常：
+   - 全大写或首字母大写
+   - 黑体/加粗显示
+   - 紧跟在**红色方框或红色横条**后方
+3. 该黑体词**正下方**紧跟一句**完整的英文故事句**（作为记忆锚点）
+
+##### 2.7.2 提取映射规则（严格按视觉层次）
+
+| 列 | 视觉位置 | 字体特征 | 示例 | 写入字段 |
+|----|----------|----------|------|----------|
+| **第 1 列** | 红色方框（或红条）后方紧跟 | 黑色粗体单词 | `Olympus` | `词源/名称`（B 列） |
+| **第 2 列** | 该黑体词正下方、缩进或换行 | 浅色/常规字重的完整英文句子 | `The Greek Gods lived high atop Mount Olympus.` | `背景故事/语境`（C 列） |
+| **第 3 列** | 段落末尾 | 紫色或特殊颜色标注的词性及中文释义 | `olympian a. 高傲的，疏离的` | `派生词汇`（D 列） |
+
+**关键处理细节**：
+
+- **第 1 列（词源/名称）**：
+  - 提取红色方框后方紧跟的**黑色粗体单词**
+  - 通常是神话人物、神话地点、神祇名（如 `Olympus`、`Achilles`、`Pandora`）
+  - 保留原始大小写（专有名词首字母大写或全大写）
+
+- **第 2 列（神话语境/出处）**：
+  - 提取该黑体词**正下方**、**缩进或换行显示**的完整英文句子
+  - **浅色或常规字重**（区别于黑体粗体）
+  - 作为**记忆锚点**
+  - 保留完整句子（保留标点、句号）
+  - 通常是 1 句话，也可能 2-3 句
+
+- **第 3 列（衍生词/拓展词汇）**：
+  - 提取该段落**末尾**出现的、用**紫色或特殊颜色**标注的内容
+  - 格式通常是：`词 词性. 中文释义`（如 `olympian a. 高傲的，疏离的`）
+  - **必须去掉前面的短横线或项目符号**（`-` `•` `·` 等）
+  - 保留原始的**词性符号**（`a.` `n.` `v.` `ad.` 等）
+  - 如果有多个衍生词，**用 `;` 分隔**（每个都按 "词 词性. 中文释义" 格式）
+
+##### 2.7.3 表格填充目标
+
+写入 **`mythology&history` sheet**，列对应关系：
+
+| mythology&history 列 | Excel 实际位置 | 内容来源 | 用户指定字段名 |
+|---------------------|---------------|----------|----------------|
+| A 编号 | A 列 | 自动递增 | — |
+| B 词源 | A 列（同列复用）| 第 1 列（红色方框后黑体词，如 `Olympus`） | **词源/名称** |
+| C 典故 | C 列 | 第 2 列（黑体词下方完整英文句子） | **背景故事/语境** |
+| D 重点词汇 | D 列 | 第 3 列（紫色字体衍生词） | **派生词汇** |
+
+**注意**：经过实际读取 `cctalk GRE BMW.xlsx` 的 `mythology&history` sheet 后确认：
+- 第 1 行标题：`神话与历史词源`
+- 第 2 行表头：**A 列空**，**C 列 = 典故**，**D 列 = 重点词汇**（没有 B 列）
+- 实际数据从第 3 行开始，A 列填编号
+
+**最终填充方式**（按用户最新要求 "对齐填充位置"）：
+
+| A 列 | C 列 | D 列 |
+|------|------|------|
+| 编号 + 词源/名称（如 `49 Olympus`） | 背景故事/语境 | 派生词汇 |
+
+> **说明**：因为 A 列既要存编号又要存"词源/名称"，采用 **`编号 + 空格 + 词源`** 的格式（如 `49 Olympus`），保持与现有数据风格一致（现有数据 A 列只有编号，无词源）。
+> 
+> **如果用户后续希望分开放置**（A=编号, B=词源, C=典故, D=重点词汇），需要调整 sheet 的列结构并重新读取，本技能当前按上述"复用 A 列"的方式执行。
+
+##### 2.7.4 解析示例
+
+**OCR 原始文本（一张典型神话典故图）：**
+
+```
+[左侧红色横条]                            [右侧]
+[Olympus] 黑体粗体                       
+The Greek Gods lived high atop           （右侧无红点行）
+  Mount Olympus.                         
+                                         olympian a. 高傲的，疏离的   <- 紫色字体
+```
+
+**关键识别点**：
+- 右侧**无红点行** → 触发模式 B
+- `Olympus` 是**黑体粗体** + 紧跟**红色横条** → 词源
+- 下方缩进完整句子 `The Greek Gods lived high atop Mount Olympus.` → 典故
+- 末尾紫色字体 `olympian a. 高傲的，疏离的` → 派生词
+
+**解析后（写入 mythology&history sheet 的 1 条记录）**：
+
+| 编号 (A) | 词源/名称 (A 复用) | 典故 (C) | 重点词汇 (D) |
+|----------|-------------------|----------|--------------|
+| `49 Olympus` | （已合并到 A） | `The Greek Gods lived high atop Mount Olympus.` | `olympian a. 高傲的，疏离的` |
+
+##### 2.7.5 与词根/前缀模式的区别
+
+| 维度 | 词根/前缀模式（2.3） | 神话典故模式（2.7） |
+|------|---------------------|---------------------|
+| 目标 sheet | `prefix` / `root` / `suffix` | `mythology&history` |
+| 右侧标识 | 有红点行 | 无红点行 |
+| 左侧内容 | 红色方框包住的英文短语/句子 | 红条/红方框 + 黑体大写专有名词 |
+| 字段数 | 5 列（含 Mnemotic Device） | 4 列（无 Mnemotic Device） |
+| 颜色含义 | 红=prefix, 蓝=root | 仅区分黑体（词源）/ 浅色（典故）/ 紫色（派生） |
+| 例子数 | 多行例词列表 | 1-2 个衍生词 |
+
+##### 2.7.6 特殊情况
+
+- **多张图都是神话典故**：每张图生成 1 条记录，按图片顺序追加到 mythology&history sheet
+- **同一张图多个神祇/典故**：按图片中**从上到下**顺序解析，每个生成 1 条记录
+- **图 1 是词根模式 + 图 2 是神话模式**：**先写词根模式的 sheet，再写 mythology&history sheet**，按用户上传顺序追加
+
+##### 2.7.7 实战示例：Bacchus（用户笔记原图）
+
+**OCR 原始文本（用户上传的 Bacchus 神话图）：**
+
+```
+[左侧红色方框 - Mnemonics]              [右侧 - 背景说明]
+@ Sherry Zhang                          酒神是古希腊及古罗马...
+
+■ Bacchus                               ...（右侧内容是中文背景介绍，
+Roman god of drama, wine, and ecstasy     不是结构化数据，应忽略）
+Bacchanalian a. 饮酒作乐的
+```
+
+**关键识别点**：
+- 右侧**无红点行** + 左侧有 `Bacchus` 黑体粗体 → 触发**模式 B（神话典故）**
+- 右侧内容是中文背景介绍，**忽略**（只关心左侧红色方框内的内容）
+- 红色方框内有 3 个层级：
+  1. `■ Bacchus`（红色 `■` 标记 + 黑体大写专有名词）→ **词源/名称**
+  2. `Roman god of drama, wine, and ecstasy`（浅色常规字重完整英文句子）→ **典故/背景故事**
+  3. `Bacchanalian a. 饮酒作乐的`（**紫色字体**）→ **派生词汇**
+
+**注意修正**：
+- 用户笔记里词源前的 `■` 是红色方块标记（不是颜色判定），但因为词源本身是 `Bacchus`（专有名词，黑色加粗），所以仍归神话典故模式
+- 与通用"红点行=核心词根"的规则区别：这里的 `■` 后跟的是**专有名词**（不是泛词根），且下面**没有例词列表**
+
+**解析后（写入 mythology&history sheet 的 1 条记录）**：
+
+| 编号 (A) | 典故 (C) | 重点词汇 (D) |
+|----------|----------|--------------|
+| `49 Bacchus` | `Roman god of drama, wine, and ecstasy` | `Bacchanalian a. 饮酒作乐的` |
+
+##### 2.7.8 神话典故模式的"实操判定捷径"
+
+由于神话典故图片的视觉特征独特，可以用以下**快速判定捷径**：
+
+| 捷径 | 检查 | 通过条件 |
+|------|------|----------|
+| 1️⃣ 右侧有红点行？ | 扫描 `■` `●` `•` | **没有**才能走模式 B |
+| 2️⃣ 左侧有黑体大写专有名词？ | 全大写 OR 首字母大写 + 黑体/加粗 | **是** |
+| 3️⃣ 该专有名词下方有完整英文句子？ | 普通字重 + 句号结尾 | **是** |
+| 4️⃣ 段落末尾有紫色字体衍生词？ | 紫色 + 词性符号 + 中文释义 | 通常有（但非必须） |
+
+**3 个捷径都通过 → 确认是神话典故模式**，启用 2.7 解析。
+
+**如果只有 1-2 捷径通过** → 单独询问用户确认模式。
+
+##### 2.7.9 修正案例 1：用户最新要求"对齐填充位置"
+
+**之前的填充方式**：A 列只放编号，B/C/D 分别放词源/典故/派生词汇
+**用户最新要求**：A 列放"编号 + 词源/名称"，C/D 列放典故/派生词汇
+
+**调整后的填充方式**（已采用）：
+
+| A 列 | C 列 | D 列 |
+|------|------|------|
+| `编号 + 空格 + 词源`（如 `49 Bacchus`） | 典故/背景故事 | 派生词汇 |
+
+**为什么 A 列要复用**：因为现有 sheet 的结构里 B 列没有内容（表头第 2 行 A=空，C=典故，D=重点词汇）。把"词源/名称"合并到 A 列可以保持 sheet 结构的最小修改。
+
+**如果用户后续希望"扩展 B 列"**：需要把现有 48 条数据全部迁移，并修改表头。当前**不推荐**做这种破坏性修改。
+
 ### Step 3：判断写入哪个 Sheet（按用户提供的图片顺序逐个 sheet 追加）
 
 **追加规则：按用户上传图片的顺序，逐个 sheet 追加，不打乱顺序。**
@@ -360,16 +553,21 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 - Mnemotic Device 字段**必须主动检查**图片中是否有助记法/典故，有就写，没有就留空
 - Examples 字段保持图片中的原始分隔方式（`/` 或 `,`）
 - **每张图的 OCR 结果都必须经用户确认后再写入**，不允许跳过
-- **不处理 mythology&history sheet**，图片中遇到神话/历史内容直接忽略
+- **mythology&history sheet 处理规则已更新**：现在支持处理神话典故模式（见 2.7）。判定方法：右侧无红点行 + 左侧有黑体大写专有名词 + 下方紧跟完整英文故事句
 
 ## 当前 Excel 状态（动态更新）
 
 - `prefix`: 实际有数据的行 3-93，编号 1-91（含写入测试 3 的 5 条新增）
 - `root`: 实际有数据的行 3-176，编号 1-174（含写入测试 3 的 2 条新增）
 - `suffix`: 实际有数据的行 3-28，编号 1-26（截至初始化）
-- `mythology&history`: 实际有数据的行 3-50，编号 1-48（截至初始化）
+- `mythology&history`: 实际数据行 3-49，编号 1-47（max_row=50 但行 50 是空）
 
 **注意：每次写入前必须重新探查 A 列最大编号和实际最后行，max_row 不可信（中间可能有大片空行）。**
+
+**mythology&history sheet 表头结构（已读取确认）**：
+- 第 1 行（标题）：`神话与历史词源`
+- 第 2 行（表头）：A=空, C=`典故`, D=`重点词汇`
+- 数据列位置：**A 列**（编号+词源复用）, **C 列**（典故）, **D 列**（重点词汇）
 
 ## 写入测试记录
 
@@ -414,3 +612,15 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
   - 行 93 / 编号 91：`dup | two, both | duplex, duplicity, duplicate | （留空）`
   - 结果：✅ 成功
 - **总计**：root +2，prefix +5，共 7 条
+
+**测试 4（2026-06-26）— 神话典故模式（Bacchus）**：
+- **图**（mythology&history sheet，模式 B 触发）：
+  - **判定依据**：右侧无红点行 + 左侧有黑体大写专有名词 `Bacchus` + 下方有完整英文句子 + 段落末尾有紫色字体衍生词
+  - **行 51 / 编号 49**：
+    - A 列：`49 Bacchus`
+    - C 列（典故）：`Roman god of drama, wine, and ecstasy`
+    - D 列（重点词汇）：`Bacchanalian a. 饮酒作乐的`
+- **注意**：
+  - 右侧的中文背景介绍（"酒神是古希腊及古罗马..."）**忽略**，不是结构化数据
+  - A 列采用"编号 + 空格 + 词源"的格式（与现有 sheet 结构兼容）
+- **结果**：✅ 成功（首次使用神话典故模式）
