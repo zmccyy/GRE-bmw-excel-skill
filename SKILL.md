@@ -557,8 +557,8 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 
 ## 当前 Excel 状态（动态更新）
 
-- `prefix`: 实际有数据的行 3-93，编号 1-91（含写入测试 3 的 5 条新增）
-- `root`: 实际有数据的行 3-176，编号 1-174（含写入测试 3 的 2 条新增）
+- `prefix`: 实际有数据的行 3-94，编号 1-92（含写入测试 5 的 1 条新增）
+- `root`: 实际有数据的行 3-184，编号 1-182（含写入测试 5 的 8 条新增）
 - `suffix`: 实际有数据的行 3-28，编号 1-26（截至初始化）
 - `mythology&history`: 实际数据行 3-50，编号 1-48（含写入测试 4 的 1 条新增）
 
@@ -624,3 +624,20 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
   - 右侧的中文背景介绍（"酒神是古希腊及古罗马..."）**忽略**，不是结构化数据
   - A 列采用"编号 + 空格 + 词源"的格式（与现有 sheet 结构兼容）
 - **结果**：✅ 成功（首次使用神话典故模式）
+
+**测试 5（2026-06-26）— 4 张多组图批量写入（9 条：8 root + 1 prefix）**：
+- **图 1**（root sheet，`ced, cess/grad, gress/vad, vas` 混合分割 → 3 条）：
+  - 行 177 / 编号 175：`ced, cess | to go | antecedent, preceding, unprecedented, predecessor, concede | （留空）`
+  - 行 178 / 编号 176：`grad, gress | to go | gradual, degrade, gradient, digressive | digressive=tangential; digressive speech`
+  - 行 179 / 编号 177：`vad, vas | to go | invade, pervasive | television's pervasive influence; pervade; - Corruption pervades all levels of government in Greece.`
+- **图 2**（root sheet，`curs, curr/ambul, ambl` 混合分割 → 2 条）：
+  - 行 180 / 编号 178：`curs, curr | to run | precursor, current, currency, concurrent, cursive, discursive | give the letter a cursory reading; have a wide currency in China; discursive writing`
+  - 行 181 / 编号 179：`ambul, ambl | to run | ambulance, ambulatory, amble | ambulatory population`
+- **图 3**（prefix sheet，`per` 单条）：
+  - 行 94 / 编号 92：`per | through | pervade, perceive, permeate, percolate, perspire, perennial, perspicacious | Per aspera, ad astra`
+- **图 4**（root sheet，`spic, spec, spect/vis/scop` 复杂混合分割 → 3 条）：
+  - 行 182 / 编号 180：`spic, spec, spect | to look, see | spectator, specter, perspicacious, circumspect, inspection, perspective, prospect | the specter of the ancient castle; the specter of earthquake; market prospect`
+  - 行 183 / 编号 181：`vis | to look, see | vista, envisage | The economic vista for the next two years is excellent.; visionary a/n.`
+  - 行 184 / 编号 182：`scop | to look, see | telescope, microscope, endoscope | （留空）`
+- **总计**：root +8，prefix +1，共 9 条
+- **踩坑**：第一次写入失败 `PermissionError`，原因是 Excel 仍占用文件。**必须先关闭 Excel 再写入**。
