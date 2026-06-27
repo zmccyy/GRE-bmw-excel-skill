@@ -495,6 +495,86 @@ ws.cell(row=new_row, column=4, value=item['derived'])  # D 列：重点词汇
 
 使用 `openpyxl`（或 `xlsx` skill）追加到目标文件：
 
+#### 4.0 写入前必做：3 项保护（防止数据丢失/回滚）
+
+```python
+import openpyxl, shutil, os
+from datetime import datetime
+
+fp = r'd:\桌面\项目\skills\GRE单词\cctalk GRE BMW.xlsx'
+
+# 保护 1：写入前自动备份（带时间戳）
+backup_fp = fp.replace('.xlsx', f'_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')
+shutil.copy2(fp, backup_fp)
+print(f'已备份: {backup_fp}')
+
+# 保护 2：检查目标文件是否被 Excel 占用（无法写入会报错）
+try:
+    with open(fp, 'a'):
+        pass
+    print('文件未被占用，可写入')
+except PermissionError:
+    print('❌ 文件被 Excel 占用！请关闭 Excel 后重试。')
+    raise
+
+# 保护 3：写入前记录当前状态（最后编号 + 行数），写入后比对
+ws_before = openpyxl.load_workbook(fp)['<目标 sheet>']
+last_num_before = 0
+last_row_before = 0
+for r in range(3, ws_before.max_row + 1):
+    a = ws_before.cell(row=r, column=1).value
+    b = ws_before.cell(row=r, column=2).value
+    if a is not None or b is not None:
+        last_row_before = r
+        if isinstance(a, int):
+            last_num_before = max(last_num_before, a)
+print(f'写入前: last_num={last_num_before}, last_row={last_row_before}')
+
+# 写入（示例）
+wb = openpyxl.load_workbook(fp)
+ws = wb['<目标 sheet>']
+for i, item in enumerate(extracted_items):
+    r = last_row_before + 1 + i
+    new_num = last_num_before + 1 + i
+    ws.cell(row=r, column=1, value=new_num)
+    ws.cell(row=r, column=2, value=item['term'])
+    # ... 写入其他列
+wb.save(fp)
+
+# 保护 4：写入后立即验证（防止保存失败或被回滚）
+wb_after = openpyxl.load_workbook(fp)
+ws_after = wb_after['<目标 sheet>']
+last_num_after = 0
+last_row_after = 0
+for r in range(3, ws_after.max_row + 1):
+    a = ws_after.cell(row=r, column=1).value
+    b = ws_after.cell(row=r, column=2).value
+    if a is not None or b is not None:
+        last_row_after = r
+        if isinstance(a, int):
+            last_num_after = max(last_num_after, a)
+
+# 验证：写入后编号应该正好增加 N 条
+expected_increase = len(extracted_items)
+actual_increase = last_num_after - last_num_before
+if actual_increase != expected_increase:
+    print(f'❌ 写入异常！预期增加 {expected_increase} 条，实际增加 {actual_increase} 条')
+    print(f'   可能原因：Excel 被外部程序回滚 / 写入前文件状态被改变')
+    # 可选：回滚到备份
+    # shutil.copy2(backup_fp, fp)
+    raise RuntimeError('写入验证失败，请检查文件状态')
+else:
+    print(f'✅ 写入验证通过：{last_num_before} → {last_num_after}（+{actual_increase}）')
+```
+
+**关键保护点：**
+- **保护 1（备份）**：每次写入前自动备份到 `*_backup_YYYYMMDD_HHMMSS.xlsx`
+- **保护 2（占用检测）**：检测文件是否被 Excel 打开，避免 PermissionError
+- **保护 3（状态快照）**：写入前记录 last_num/last_row
+- **保护 4（写入验证）**：写入后重新读取，验证编号递增数量是否正确
+
+#### 4.1 基础写入代码
+
 ```python
 import openpyxl
 wb = openpyxl.load_workbook('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
@@ -526,6 +606,7 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 - **不修改** 第 1 行标题、第 2 行表头
 - **不删除** 已存在的数据
 - 保持原有格式（字体、对齐等）
+- **必须调用 4.0 的 4 项保护**
 
 ### Step 5：反馈结果
 
@@ -569,14 +650,19 @@ wb.save('d:/桌面/项目/skills/GRE单词/cctalk GRE BMW.xlsx')
 - **每张图的 OCR 结果都必须经用户确认后再写入**，不允许跳过
 - **mythology&history sheet 处理规则已更新**：现在支持处理神话典故模式（见 2.7）。判定方法：右侧无红点行 + 左侧有黑体大写专有名词 + 下方紧跟完整英文故事句
 
-## 当前 Excel 状态（动态更新）
+## 当前 Excel 状态（动态更新，2026-06-27）
 
-- `prefix`: 实际有数据的行 3-94，编号 1-92（含写入测试 5 的 1 条新增）
-- `root`: 实际有数据的行 3-184，编号 1-182（含写入测试 5 的 8 条新增）
+- `prefix`: 实际有数据的行 3-100，编号 1-98（已确认）
+- `root`: 实际有数据的行 3-203，编号 1-201（已确认）
 - `suffix`: 实际有数据的行 3-28，编号 1-26（截至初始化）
-- `mythology&history`: 实际数据行 3-50，编号 1-48（含写入测试 4 的 1 条新增）
+- `mythology&history`: 实际数据行 3-67，编号 1-65（已确认）
 
 **注意：每次写入前必须重新探查 A 列最大编号和实际最后行，max_row 不可信（中间可能有大片空行）。**
+
+**写入安全提示：**
+- 写入前自动备份到 `*_backup_YYYYMMDD_HHMMSS.xlsx`（见 Step 4.0）
+- 写入后必须验证：编号递增数量 = 本次写入条数
+- 如果验证失败，立即停止并提示用户，不要继续写入
 
 **mythology&history sheet 表头结构（已读取确认，2026-06-26 修正）**：
 - 第 1 行（标题）：`神话与历史词源`（A1:D1 合并）
